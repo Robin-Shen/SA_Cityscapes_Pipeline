@@ -35,7 +35,7 @@ def load_cityscapes(path, fdr):
         image = np.array(image)
         sseg = gt_covert(sseg)
         inst = np.array(inst)
-        if os.path.exists(path+"/scribbles/"+name+"_scri.png"):
+        if os.path.exists(path+"/"+fdr+"/"+name+"_scri.png"):
             scribbles = np.array(Image.open(path+"/"+fdr+"/"+name+"_scri.png"))
         else:
             scribbles = None

@@ -168,7 +168,7 @@ if __name__ == "__main__":
     # create folder
     if not os.path.isdir("./prob_heur/"):
         os.mkdir("./prob_heur")
-        
+
     cnt = 0
     ssegs = []
     preds = []
@@ -183,7 +183,9 @@ if __name__ == "__main__":
             continue
 
         # generate superpixels
-        superpixels = superpixel.get(image)
+        # superpixels = superpixel.get(image)
+        graph = nx.read_gpickle(path + "/graphs/" + filename + ".gpickle")
+        superpixels = graph.get_superpixels_map()
         # split by annotation
         superpixels = superpixel.split(superpixels, scribbles)
 
