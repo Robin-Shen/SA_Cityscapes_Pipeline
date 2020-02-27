@@ -185,9 +185,10 @@ if __name__ == "__main__":
             continue
 
         # generate superpixels
-        superpixels = superpixel.get(image)
-        # split by annotation
-        superpixels = superpixel.split(superpixels, scribbles)
+        superpixels = np.zeros((height, width), dtype=int)
+        for y in range(height):
+            for x in range(width):
+                superpixels[y, x] = x + y * width
 
         # build graph
         graph = to_graph.to_superpixel_graph(image, scribbles, superpixels)
