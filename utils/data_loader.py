@@ -8,10 +8,12 @@ from PIL import Image
 import torchvision.datasets
 from .data import labels, class_info
 
+
 class Dataset(torchvision.datasets.Cityscapes):
     """
     custom dataset that includes image name
     """
+
     # override the __getitem__ method. this is the method that dataloader calls
     def __getitem__(self, index):
         # this is what ImageFolder normally returns
@@ -29,17 +31,18 @@ def load_cityscapes(path, fdr):
     """
     load Cityscapes val set
     """
-    dataset = Dataset(path, split="val", mode="fine", target_type=["semantic", "instance"])
+    dataset = Dataset(path, split='val', mode="fine", target_type=["semantic", "instance"])
 
     for image, (sseg, inst), name in dataset:
         image = np.array(image)
         sseg = gt_covert(sseg)
         inst = np.array(inst)
-        if os.path.exists(path+"/"+fdr+"/"+name+"_scri.png"):
-            scribbles = np.array(Image.open(path+"/"+fdr+"/"+name+"_scri.png"))
+        if os.path.exists('/home/yifan/repos/new_experiments_20190923/cityscapes/scribbles/' + name + "_scri.png"):
+            scribbles = np.array(
+                Image.open('/home/yifan/repos/new_experiments_20190923/cityscapes/scribbles/' + name + "_scri.png"))
         else:
             scribbles = None
-        #scribbles = scribble_convert(scribbles)
+        # scribbles = scribble_convert(scribbles)
         yield name, image, sseg, inst, scribbles
 
 
@@ -53,7 +56,7 @@ def gt_covert(gt):
         if label.id != -1:
             new_gt = new_gt + (gt == label.id) * label.trainId
         else:
-            new_gt = new_gt +  (gt == label.id) * 255
+            new_gt = new_gt + (gt == label.id) * 255
     return new_gt
 
 
@@ -64,11 +67,11 @@ def scribble_convert(scribbles):
     new_scribbles = np.zeros((*scribbles.shape, 3), dtype=np.uint8)
     # class id
     labels = gt_covert(scribbles * (scribbles < 1000) + (scribbles // 1000) * (scribbles >= 1000))
-    new_scribbles[:,:,1] = labels
+    new_scribbles[:, :, 1] = labels
     # annotated
     annotated = (labels != 255) * 255
-    new_scribbles[:,:,0] = annotated
+    new_scribbles[:, :, 0] = annotated
     # instance id
     instance = (scribbles % 1000) * (scribbles >= 1000)
-    new_scribbles[:,:,2] = instance
+    new_scribbles[:, :, 2] = instance
     return new_scribbles
