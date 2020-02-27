@@ -163,11 +163,12 @@ if __name__ == "__main__":
     unions = np.zeros((21))
 
     path = DATA_PATH
+    prob_path = "/m/Camera_team/01_team_members/ruobing/drn_d_39_prob"
     data_generator = data_loader.load_cityscapes(path, "arti_scribbles")
 
     # create folder
-    if not os.path.isdir("./feat_prob_arti_pixel/"):
-        os.mkdir("./feat_prob_arti_pixel")
+    if not os.path.isdir("./feat_prob_arti/"):
+        os.mkdir("./feat_prob_arti")
 
     cnt = 0
     ssegs = []
@@ -184,34 +185,36 @@ if __name__ == "__main__":
             print("{}: Skipping image {} because it does not have annotation...".format(cnt, filename))
             continue
 
+        # scribbles = cv2.cvtColor(scribbles, cv2.COLOR_RGB2BGR)
         # generate superpixels
-        superpixels = np.zeros((height, width), dtype=int)
-        for y in range(height):
-            for x in range(width):
-                superpixels[y, x] = x + y * width
+        # superpixels = superpixel.get(image)
+        # split by annotation
+        # superpixels = superpixel.split(superpixels, scribbles)
 
         # build graph
-        graph = to_graph.to_superpixel_graph(image, scribbles, superpixels)
+        # graph = to_graph.to_superpixel_graph(image, scribbles, superpixels)
+        graph = to_graph.to_pixel_graph(image, scribbles)
 
         # get prob map
-        prob = np.load(path + "/probs/" + filename + "_leftImg8bit.npy")[0].astype("float")
-        #show_feat(prob)
+        prob = np.load(prob_path + "/" + filename + "_leftImg8bit.npy")[0].astype("float")
         graph.load_feat_map(prob, attr="prob")
 
-        lambd=0.1
+        lambd=0.3
         psi=0.0
-        phi=0.3
+        phi=1
+        s_t = time.time()
         heuristic_graph = solver.heuristic.solve(graph.copy(), lambd, psi, phi, attr="prob")
+        e_t = time.time()
+        print("time consuming for frame {} is {}".format(filename, e_t - s_t))
         # convert into mask
         mask, pred = to_image.graph_to_image(heuristic_graph, height, width, scribbles)
 
         # get formatted sseg and inst
         sseg_pred, inst_pred = to_image.format(pred)
         # save annotation
-        Image.fromarray(sseg_pred).save("./feat_prob_arti_pixel/"  + filename + "_gtFine_labelIds.png")
-        Image.fromarray(inst_pred).save("./feat_prob_arti_pixel/" + filename + "_gtFine_instanceIds.png")
-        Image.fromarray(mask).save("./feat_prob_arti_pixel/" + filename + "_gtFine_color.png")
-
+        Image.fromarray(sseg_pred.astype(np.int16)).save("./feat_prob_arti/"  + filename + "_gtFine_labelIds.png")
+        Image.fromarray(inst_pred.astype(np.int16)).save("./feat_prob_arti/" + filename + "_gtFine_instanceIds.png")
+        Image.fromarray(mask).save("./feat_prob_arti/" + filename + "_gtFine_color.png")
         # store for score
         preds += list(pred%21)
         ssegs += list(sseg)
@@ -231,3 +234,4 @@ if __name__ == "__main__":
     # calculate MIoU
     print("Score for origin scribbles:")
     print(metrics.scores(ssegs, preds, 19))
+

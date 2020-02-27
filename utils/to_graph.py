@@ -7,6 +7,7 @@ import numpy as np
 from skimage import segmentation as sg
 from .data import class_info, label_map
 
+
 def to_superpixel_graph(image, mask, superpixels):
     """
     convert OpenCV BGR color image into NetworkX undirected graph
@@ -25,9 +26,9 @@ def to_superpixel_graph(image, mask, superpixels):
     print("Building graph based on superpixels...")
 
     # avoid to put all pixels into graph, dilate unlabelled area
-    selected = (1 - mask[:,:,0] // 255).reshape((image.shape[0], image.shape[1], 1))
+    selected = (1 - mask[:, :, 0] // 255).reshape((image.shape[0], image.shape[1], 1))
     # dilate
-    kernel = np.ones((5,5), np.uint8)
+    kernel = np.ones((5, 5), np.uint8)
     selected = cv2.dilate(selected, kernel, iterations=2)
 
     # int to float
@@ -77,8 +78,8 @@ def to_superpixel_graph(image, mask, superpixels):
             # since it is an undirected graph, only need to add edges bettween left and up neighbors
             # left neighbor
             if x != 0:
-                j = superpixels[y, x-1]
-                if i != j and selected[y, x-1]:
+                j = superpixels[y, x - 1]
+                if i != j and selected[y, x - 1]:
                     # add new edge
                     if not graph.has_edge(i, j):
                         graph.add_edge(i, j, connections=1)
@@ -87,14 +88,74 @@ def to_superpixel_graph(image, mask, superpixels):
                         graph[i][j]["connections"] += 1
             # up neighbor
             if y != 0:
-                j = superpixels[y-1, x]
-                if i != j and selected[y-1, x]:
+                j = superpixels[y - 1, x]
+                if i != j and selected[y - 1, x]:
                     # add new edge
                     if not graph.has_edge(i, j):
                         graph.add_edge(i, j, connections=1)
                     # increase connection
                     else:
                         graph[i][j]["connections"] += 1
+
+    return graph
+
+
+def to_pixel_graph(image, mask):
+    print("Building graph based on pixels...")
+
+    # avoid to put all pixels into graph, dilate unlabelled area
+    selected = (1 - mask[:, :, 0] // 255).reshape((image.shape[0], image.shape[1], 1))
+    # dilate
+    kernel = np.ones((5, 5), np.uint8)
+    selected = cv2.dilate(selected, kernel, iterations=2)
+
+    # int to float
+    image = image / 255
+
+    # build graph
+    h, w = image.shape[:2]
+    graph = Graph(h, w)
+
+    # get nodes
+    ind = -1
+    for y in range(h):
+        for x in range(w):
+            # increase node index
+            ind += 1
+            # skip unselected pixels
+            if not selected[y, x]:
+                continue
+            pixel = (x, y)
+            color = image[y, x].copy()
+            # get label
+            annotated, label_id, scri_id = mask[y, x]
+            if not annotated:
+                label = None
+            else:
+                label = label_map[label_id] + "_" + str(scri_id)
+            # add new superpixel node
+            if ind not in graph:
+                graph.add_node(ind, mean_color=color, label=label, pixels=[pixel], weight=1)
+            # add pixel to current node
+            else:
+                # just sum togetehr, calculate average later
+                graph.nodes[ind]["mean_color"] += color
+                graph.nodes[ind]["label"] = label if label else graph.nodes[ind]["label"]
+                graph.nodes[ind]["pixels"].append(pixel)
+                graph.nodes[ind]["weight"] += 1
+
+            # add eges
+            # since it is an undirected graph, only need to add edges between left and up neighbors
+            # left neighbor
+            if (ind - 1) in graph.nodes and x != 0:
+                graph.add_edge(ind, ind - 1, connections=1)
+            # up neighbor
+            if (ind - w) in graph.nodes and y != 0:
+                graph.add_edge(ind, ind - w, connections=1)
+
+    # calculate average color
+    for ind in graph.nodes:
+        graph.nodes[ind]["mean_color"] = graph.nodes[ind]["mean_color"] / graph.nodes[ind]["weight"]
 
     return graph
 
@@ -112,7 +173,6 @@ class Graph(nx.Graph):
         graph.height, graph.width = self.height, self.width
 
         return graph
-
 
     def load_feat_map(self, feat_map, attr="feat"):
         """
@@ -178,7 +238,6 @@ class Graph(nx.Graph):
 
         # remove node j
         self.remove_node(j)
-
 
     def label_merge(self, shortcut=True):
         """
@@ -286,7 +345,7 @@ class Graph(nx.Graph):
         get superpixels map from graph
         """
         # initialize
-        superpixels = np.zeros((self.height, self.width), dtype=int)
+        superpixels = np.zeros((self.height, self.width), dtype=np.uint16)
         for i in self.nodes:
             # update superpixels
             for x, y in self.nodes[i]["pixels"]:
