@@ -345,7 +345,7 @@ class Graph(nx.Graph):
         get superpixels map from graph
         """
         # initialize
-        superpixels = np.zeros((self.height, self.width), dtype=np.uint16)
+        superpixels = np.zeros((self.height, self.width), dtype=int)
         for i in self.nodes:
             # update superpixels
             for x, y in self.nodes[i]["pixels"]:

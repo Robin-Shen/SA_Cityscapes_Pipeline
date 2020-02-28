@@ -166,8 +166,8 @@ if __name__ == "__main__":
     data_generator = data_loader.load_cityscapes(path, "scribbles")
 
     # create folder
-    if not os.path.isdir("./feat_heur/"):
-        os.mkdir("./feat_heur")
+    if not os.path.isdir("./feat_ilp/"):
+        os.mkdir("./feat_ilp")
 
     # load cnn model
     model = set_model("./models/checkpoints/deeplabv1_resnet101-coco.pth")
@@ -179,12 +179,18 @@ if __name__ == "__main__":
     preds = []
 
     for filename, image, sseg, inst, scribbles in data_generator:
+        cnt += 1
         height, width = image.shape[:2]
         if scribbles is not None:
             print("{}: Generating ground truth approach for image {}...".format(cnt, filename))
         else:
             # skip image which does not have annotation
             print("{}: Skipping image {} because it does not have annotation...".format(cnt, filename))
+            continue
+
+        # skip existed gt
+        if os.path.isfile("./feat_ilp/" + filename + "_gtFine_instanceIds.png"):
+            print("Annotation exists, skip {}".format(filename))
             continue
 
         # generate superpixels
@@ -239,8 +245,9 @@ if __name__ == "__main__":
         # get formatted sseg and inst
         sseg_pred, inst_pred = to_image.format(pred)
         # save annotation
-        Image.fromarray(sseg_pred).save("./feat_heur/"  + filename + "_gtFine_labelIds.png")
-        Image.fromarray(inst_pred).save("./feat_heur/" + filename + "_gtFine_instanceIds.png")
+        Image.fromarray(sseg_pred).save("./feat_ilp/"  + filename + "_gtFine_labelIds.png")
+        Image.fromarray(inst_pred).save("./feat_ilp/" + filename + "_gtFine_instanceIds.png")
+        cv2.imwrite("./feat_ilp/" + filename + "_gtFine_color.png", mask)
 
         # store for score
         preds += list(pred%21)
@@ -250,7 +257,6 @@ if __name__ == "__main__":
         # mask_show(image, mask, inst_pred, name="image")
         # cv2.destroyAllWindows()
 
-        cnt += 1
         # terminate with iteration limit
         if cnt > 1:
              break

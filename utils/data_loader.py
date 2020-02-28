@@ -33,13 +33,14 @@ def load_cityscapes(path, fdr):
     """
     dataset = Dataset(path, split='val', mode="fine", target_type=["semantic", "instance"])
 
+    from PATH import SCRI_PATH as spath
+
     for image, (sseg, inst), name in dataset:
         image = np.array(image)
         sseg = gt_covert(sseg)
         inst = np.array(inst)
-        if os.path.exists('/home/yifan/repos/new_experiments_20190923/cityscapes/scribbles/' + name + "_scri.png"):
-            scribbles = np.array(
-                Image.open('/home/yifan/repos/new_experiments_20190923/cityscapes/scribbles/' + name + "_scri.png"))
+        if os.path.exists(spath + "/" + fdr + "/" + name + "_scri.png"):
+            scribbles = np.array(Image.open(spath + "/" + fdr + "/" + name + "_scri.png"))
         else:
             scribbles = None
         # scribbles = scribble_convert(scribbles)
