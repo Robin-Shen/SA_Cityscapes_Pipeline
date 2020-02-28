@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 from PIL import Image
 import torchvision.datasets
-from .data import labels, class_info
+from utils.data import labels, class_info
 
 
 class Dataset(torchvision.datasets.Cityscapes):

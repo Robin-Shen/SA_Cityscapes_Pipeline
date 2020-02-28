@@ -5,7 +5,7 @@ import cv2
 import networkx as nx
 import numpy as np
 from skimage import segmentation as sg
-from .data import class_info, label_map
+from utils.data import class_info, label_map
 
 def get_superpixels(image):
     """
