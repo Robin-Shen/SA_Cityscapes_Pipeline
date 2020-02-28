@@ -167,6 +167,8 @@ if __name__ == "__main__":
     prob_path = PROB_PATH
 
     # create folder
+    if not os.path.isdir("./experiments_eccv"):
+        os.mkdir("./experiments_eccv")
     if not os.path.isdir("./experiments_eccv/prob_heur/"):
         os.mkdir("./experiments_eccv/prob_heur")
 
@@ -192,8 +194,8 @@ if __name__ == "__main__":
             height, width = image.shape[:2]
             if scribbles is not None:
                 print("{}: Generating ground truth approach for image {}...".format(cnt, filename))
-                #scribbles = to_image.fill(scribbles)
-                #scribbles = data_loader.scribble_convert(scribbles)
+                # BGR to RGB
+                scribbles = cv2.cvtColor(scribbles, cv2.COLOR_BGR2RGB)
             else:
                 # skip image which does not have annotation
                 print("{}: Skipping image {} because it does not have annotation...".format(cnt, filename))
@@ -229,13 +231,15 @@ if __name__ == "__main__":
             algo_time +=  time.time() - tick1
             #print("Average algo time: {}".format(time.time() - tick1))
             mask, pred = to_image.graph_to_image(heuristic_graph, height, width, scribbles)
+            mask_show(image, mask, pred, name="heur")
+            cv2.destroyAllWindows()
 
             # get formatted sseg and inst
             sseg_pred, inst_pred = to_image.format(pred)
             # save annotation
             Image.fromarray(sseg_pred).save("./experiments_eccv/prob_heur/"  + filename + "_gtFine_labelIds.png")
-            Image.fromarray(inst_pred).save("./experiments_eccv/feat_prob_arti/" + filename + "_gtFine_instanceIds.png")
-            cv2.imwrite("./experiments_eccv/feat_prob_arti/" + filename + "_gtFine_color.png", mask)
+            Image.fromarray(inst_pred).save("./experiments_eccv/prob_heur/" + filename + "_gtFine_instanceIds.png")
+            cv2.imwrite("./experiments_eccv/prob_heur/" + filename + "_gtFine_color.png", mask)
 
             # store for score
             preds += list(pred%21)

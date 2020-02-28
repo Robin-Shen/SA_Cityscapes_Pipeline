@@ -185,6 +185,8 @@ if __name__ == "__main__":
         height, width = image.shape[:2]
         if scribbles is not None:
             print("{}: Generating ground truth approach for image {}...".format(cnt, filename))
+            # BGR to RGB
+            scribbles = cv2.cvtColor(scribbles, cv2.COLOR_BGR2RGB)
         else:
             # skip image which does not have annotation
             print("{}: Skipping image {} because it does not have annotation...".format(cnt, filename))
