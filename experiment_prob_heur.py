@@ -20,7 +20,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 import models
 from matplotlib import pyplot as plt
-
+import sys
 
 # ignore warnings
 import warnings
@@ -164,10 +164,11 @@ if __name__ == "__main__":
 
     path = DATA_PATH
     data_generator = data_loader.load_cityscapes(path, "scribbles")
+    prob_path = PROB_PATH
 
     # create folder
-    if not os.path.isdir("./prob_heur/"):
-        os.mkdir("./prob_heur")
+    if not os.path.isdir("./experiments_eccv/prob_heur/"):
+        os.mkdir("./experiments_eccv/prob_heur")
 
     cnt = 0
     ssegs = []
@@ -175,66 +176,87 @@ if __name__ == "__main__":
 
     tick = time.time()
 
-    for filename, image, sseg, inst, scribbles in data_generator:
-        cnt += 1
-        height, width = image.shape[:2]
-        if scribbles is not None:
-            print("{}: Generating ground truth approach for image {}...".format(cnt, filename))
-        else:
-            # skip image which does not have annotation
-            print("{}: Skipping image {} because it does not have annotation...".format(cnt, filename))
-            continue
+    algo_time = 0
 
-        # skip existed gt
-        if os.path.isfile("./feat_prob_arti/" + filename + "_gtFine_instanceIds.png"):
-            print("Annotation exists, skip {}".format(filename))
-            continue
+    # lambda is the growing parameter that acts finally as the regularization parameter beta, psi is  weights color, phi is weights on fea(prob.)
+    # wi * wj * (psi * np.linalg.norm(Yi - Yj) ** 2 + phi * np.linalg.norm(Zi - Zj) ** 2)<= beta * cij * (wi + wj):
+    # beta = (iter / iterations) ** gamma * lambd
+    lambd = 0.1
+    psi = 0.0
+    phi = 0.3
 
-        # generate superpixels
-        # superpixels = superpixel.get(image)
-        graph = nx.read_gpickle(path + "/graphs/" + filename + ".gpickle")
-        superpixels = graph.get_superpixels_map()
-        # split by annotation
-        superpixels = superpixel.split(superpixels, scribbles)
 
-        # build graph
-        graph = to_graph.to_superpixel_graph(image, scribbles, superpixels)
+    try:
+        for filename, image, sseg, inst, scribbles in data_generator:
+            cnt += 1
+            height, width = image.shape[:2]
+            if scribbles is not None:
+                print("{}: Generating ground truth approach for image {}...".format(cnt, filename))
+                #scribbles = to_image.fill(scribbles)
+                #scribbles = data_loader.scribble_convert(scribbles)
+            else:
+                # skip image which does not have annotation
+                print("{}: Skipping image {} because it does not have annotation...".format(cnt, filename))
+                cnt -= 1
+                continue
 
-        # get prob map
-        prob = np.load(path + "/probs/" + filename + "_leftImg8bit.npy")[0].astype("float")
-        #show_feat(prob)
-        graph.load_feat_map(prob, attr="prob")
+            # skip existed gt
+            if os.path.isfile("./experiments_eccv/prob_heur/" + filename + "_gtFine_instanceIds.png"):
+                print("Annotation exists, skip {}".format(filename))
+                cnt -= 1
+                continue
 
-        lambd=0.1
-        psi=0.0
-        phi=0.3
-        heuristic_graph = solver.heuristic.solve(graph.copy(), lambd, psi, phi, attr="prob")
-        # convert into mask
-        mask, pred = to_image.graph_to_image(heuristic_graph, height, width, scribbles)
+            # generate superpixels
+            # superpixels = superpixel.get(image)
+            #print(path + "/graphs/" + filename)
+            graph = nx.read_gpickle(path + "/graphs/" + filename + ".gpickle")
 
-        # get formatted sseg and inst
-        sseg_pred, inst_pred = to_image.format(pred)
-        # save annotation
-        Image.fromarray(sseg_pred).save("./prob_heur/"  + filename + "_gtFine_labelIds.png")
-        Image.fromarray(inst_pred).save("./prob_heur/" + filename + "_gtFine_instanceIds.png")
-        cv2.imwrite("./prob_heur/" + filename + "_gtFine_color.png", mask)
+            superpixels = graph.get_superpixels_map()
+            # split by annotation
+            superpixels = superpixel.split(superpixels, scribbles)
 
-        # store for score
-        preds += list(pred%21)
-        ssegs += list(sseg)
+            # build graph
+            graph = to_graph.to_superpixel_graph(image, scribbles, superpixels)
 
-        # visualize
-        # mask_show(image, mask, inst_pred, name="image")
-        # cv2.destroyAllWindows()
+            # get prob map
+            prob = np.load(prob_path + filename + "_leftImg8bit.npy")[0].astype("float")
+            #show_feat(prob)
+            graph.load_feat_map(prob, attr="prob")
 
-        # terminate with iteration limit
-        if cnt > 1:
-             break
+            tick1 = time.time()
+            heuristic_graph = solver.heuristic.solve(graph.copy(), lambd, psi, phi, attr="prob")
+            # convert into mask
+            algo_time +=  time.time() - tick1
+            #print("Average algo time: {}".format(time.time() - tick1))
+            mask, pred = to_image.graph_to_image(heuristic_graph, height, width, scribbles)
+
+            # get formatted sseg and inst
+            sseg_pred, inst_pred = to_image.format(pred)
+            # save annotation
+            Image.fromarray(sseg_pred).save("./experiments_eccv/prob_heur/"  + filename + "_gtFine_labelIds.png")
+            Image.fromarray(inst_pred).save("./experiments_eccv/feat_prob_arti/" + filename + "_gtFine_instanceIds.png")
+            cv2.imwrite("./experiments_eccv/feat_prob_arti/" + filename + "_gtFine_color.png", mask)
+
+            # store for score
+            preds += list(pred%21)
+            ssegs += list(sseg)
+
+            # visualize
+            # mask_show(image, mask, inst_pred, name="image")
+            # cv2.destroyAllWindows()
+
+            # terminate with iteration limit
+            #if cnt > 1:
+            #    break
+    except KeyboardInterrupt:
+        pass
+
 
     # show paramters
     print(lambd, psi, phi)
 
-    print("Average time: {}".format((time.time() - tick) / cnt))
+    print("Real used average time: {}".format((time.time() - tick) / cnt))
+    print("Average algo time: {}".format(algo_time / cnt))
 
     # calculate MIoU
     print("Score for origin scribbles:")
