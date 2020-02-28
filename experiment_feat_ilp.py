@@ -178,6 +178,8 @@ if __name__ == "__main__":
     ssegs = []
     preds = []
 
+    tick = time.time()
+
     for filename, image, sseg, inst, scribbles in data_generator:
         cnt += 1
         height, width = image.shape[:2]
@@ -263,6 +265,8 @@ if __name__ == "__main__":
 
     # show paramters
     print(lambd, psi, phi)
+
+    print("Average time: {}".format((time.time() - tick) / cnt))
 
     # calculate MIoU
     print("Score for origin scribbles:")
