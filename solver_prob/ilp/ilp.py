@@ -106,7 +106,7 @@ def get_obj(graph, lambd, label_map):
             # variable name
             u_colnames.append("x_" + str(i) + "_" + str(l))
             # coefficient
-            fi = graph.nodes[i]["prob"]
+            fi = graph.nodes[i]["feat"]
             Yl = np.zeros((19,))
             Yl[l%19] =  1
             cil = np.linalg.norm(fi - Yl) ** 2
@@ -226,12 +226,15 @@ def warm_start(ilp, pred, superpixels):
     for y in range(h):
         for x in range(w):
             superpixel = superpixels[y][x]
+            # skip if superpixel is not selected
+            if not superpixel:
+                continue
             # skip if superpixel is added
             if superpixel in added:
                 continue
             added.add(superpixel)
             for l in labels:
-                name = "x_{}_{}".format(superpixel, l)
+                name = "x_" + str(superpixel) + "_" + str(l)
                 names.append(name)
                 # decide binary state
                 if l == pred[y][x]:

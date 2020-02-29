@@ -166,8 +166,10 @@ if __name__ == "__main__":
     data_generator = data_loader.load_cityscapes(path, "scribbles")
 
     # create folder
-    if not os.path.isdir("./feat_heur/"):
-        os.mkdir("./feat_heur")
+    if not os.path.isdir("./experiments_eccv"):
+        os.mkdir("./experiments_eccv")
+    if not os.path.isdir("./experiments_eccv/feat_heur/"):
+        os.mkdir("./experiments_eccv/feat_heur")
 
     # load cnn model
     model = set_model("./models/checkpoints/deeplabv1_resnet101-coco.pth")
@@ -193,7 +195,7 @@ if __name__ == "__main__":
             continue
 
         # skip existed gt
-        if os.path.isfile("./feat_heur/" + filename + "_gtFine_instanceIds.png"):
+        if os.path.isfile("./experiments_eccv/feat_heur/" + filename + "_gtFine_instanceIds.png"):
             print("Annotation exists, skip {}".format(filename))
             continue
 
@@ -221,9 +223,9 @@ if __name__ == "__main__":
         # get formatted sseg and inst
         sseg_pred, inst_pred = to_image.format(pred)
         # save annotation
-        Image.fromarray(sseg_pred).save("./feat_heur/"  + filename + "_gtFine_labelIds.png")
-        Image.fromarray(inst_pred).save("./feat_heur/" + filename + "_gtFine_instanceIds.png")
-        cv2.imwrite("./feat_heur/" + filename + "_gtFine_color.png", mask)
+        Image.fromarray(sseg_pred).save("./experiments_eccv/feat_heur/"  + filename + "_gtFine_labelIds.png")
+        Image.fromarray(inst_pred).save("./experiments_eccv/feat_heur/" + filename + "_gtFine_instanceIds.png")
+        cv2.imwrite("./experiments_eccv/feat_heur/" + filename + "_gtFine_color.png", mask)
 
         # store for score
         preds += list(pred%21)

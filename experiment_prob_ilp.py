@@ -10,10 +10,11 @@ from PIL import Image
 import networkx as nx
 import numpy as np
 from skimage import segmentation as sg
+import argparse
 
 from PATH import *
 from utils import *
-import solver
+import solver_prob as solver
 
 import torch
 import torch.nn as nn
@@ -159,22 +160,26 @@ def show_feat(feat_map):
 
 if __name__ == "__main__":
 
+    # set parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--param', type=int, default=0.01)
+    parser.add_argument('--timelimit', type=int, default=5)
+    args = parser.parse_args()
+
+
+
     intersections = np.zeros((21))
     unions = np.zeros((21))
 
     path = DATA_PATH
     data_generator = data_loader.load_cityscapes(path, "scribbles")
+    prob_path = PROB_PATH
 
     # create folder
     if not os.path.isdir("./experiments_eccv"):
         os.mkdir("./experiments_eccv")
-    if not os.path.isdir("./experiments_eccv/feat_ilp/"):
-        os.mkdir("./experiments_eccv/feat_ilp")
-
-    # load cnn model
-    model = set_model("./models/checkpoints/deeplabv1_resnet101-coco.pth")
-    feature_out = FeatureOut(model, 4)
-    print(feature_out)
+    if not os.path.isdir("./experiments_eccv/prob_ilp/"):
+        os.mkdir("./experiments_eccv/prob_ilp")
 
     cnt = 0
     ssegs = []
@@ -196,11 +201,13 @@ if __name__ == "__main__":
         else:
             # skip image which does not have annotation
             print("{}: Skipping image {} because it does not have annotation...".format(cnt, filename))
+            cnt -= 1
             continue
 
         # skip existed gt
-        if os.path.isfile("./experiments_eccv/feat_ilp/" + filename + "_gtFine_instanceIds.png"):
+        if os.path.isfile("./experiments_eccv/prob_ilp/" + filename + "_gtFine_labelIds.png"):
             print("Annotation exists, skip {}".format(filename))
+            cnt -= 1
             continue
 
         # generate superpixels
@@ -213,9 +220,10 @@ if __name__ == "__main__":
         # build graph
         graph = to_graph.to_superpixel_graph(image, scribbles, superpixels)
 
-        # get feature map
-        feat_map = get_map(image, feature_out)
-        graph.load_feat_map(feat_map)
+        # get prob map
+        prob = np.load(prob_path + filename + "_leftImg8bit.npy")[0].astype("float")
+        #show_feat(prob)
+        graph.load_feat_map(prob, attr="feat")
 
         # lambd=0.1
         # psi=0.0
@@ -228,7 +236,7 @@ if __name__ == "__main__":
         # cv2.destroyAllWindows()
 
         # load heuristic result directly
-        pred_id = np.array(Image.open("./experiments_eccv/feat_heur/" + filename + "_gtFine_labelIds.png"))
+        pred_id = np.array(Image.open("./experiments_eccv/prob_heur/" + filename + "_gtFine_labelIds.png"))
         pred = np.zeros_like(pred_id, dtype=np.int8)
         for trainid in np.unique(pred_id):
             id = data.id2train[trainid]
@@ -248,10 +256,10 @@ if __name__ == "__main__":
         # get superpixels map
         superpixels = ilp_graph.get_superpixels_map()
         # integer linear programming
-        ilp = solver.ilp.build_model(ilp_graph, 0.01)
+        ilp = solver.ilp.build_model(ilp_graph, args.param)
         solver.ilp.warm_start(ilp, pred%21, superpixels)
         # set time limit
-        timelimit = 5
+        timelimit = args.timelimit
         ilp.parameters.timelimit.set(timelimit)
         # solve
         ilp.solve()
@@ -263,24 +271,24 @@ if __name__ == "__main__":
         # get formatted sseg and inst
         sseg_pred, inst_pred = to_image.format(pred)
         # save annotation
-        Image.fromarray(sseg_pred).save("./experiments_eccv/feat_ilp/"  + filename + "_gtFine_labelIds.png")
-        # Image.fromarray(inst_pred).save("./experiments_eccv/feat_ilp/" + filename + "_gtFine_instanceIds.png")
-        cv2.imwrite("./experiments_eccv/feat_ilp/" + filename + "_gtFine_color.png", mask)
+        Image.fromarray(sseg_pred).save("./experiments_eccv/prob_ilp/"  + filename + "_gtFine_labelIds.png")
+        # Image.fromarray(inst_pred).save("./experiments_eccv/prob_ilp/" + filename + "_gtFine_instanceIds.png")
+        cv2.imwrite("./experiments_eccv/prob_ilp/" + filename + "_gtFine_color.png", mask)
 
         # store for score
         preds += list(pred%21)
         ssegs += list(sseg)
 
         # visualize
-        # mask_show(image, mask, inst_pred, name="image")
-        # cv2.destroyAllWindows()
+        mask_show(image, mask, inst_pred, name="image")
+        cv2.destroyAllWindows()
 
         # terminate with iteration limit
         if cnt > 1:
              break
 
     # show paramters
-    # print(lambd, psi, phi)
+    #print(lambd, psi, phi)
 
     print("Average time: {}".format((time.time() - tick) / cnt))
 
