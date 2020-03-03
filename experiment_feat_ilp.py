@@ -257,6 +257,10 @@ if __name__ == "__main__":
         if ilp.solution.get_status() == 107:
             mask, pred = to_image.ilp_to_image(ilp_graph, ilp, height, width, scribbles)
             cv2.imwrite("./experiments_eccv/feat_ilp/" + filename + "_gtFine_color.png", mask)
+        else:
+            infea.append(filename)
+            with open("./experiments_eccv/prob_ilp/infeasibles.txt", "w") as output:
+                 output.write(str(infea))
         # show the mask
         # mask_show(image, mask, pred, name="ilp")
         # cv2.destroyAllWindows()
