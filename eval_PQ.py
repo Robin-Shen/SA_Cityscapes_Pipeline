@@ -18,7 +18,7 @@ if __name__ == "__main__":
     gt_in_path = DATA_PATH + "/gtFine"
     gt_out_path = DATA_PATH + "/panoptic"
 
-    pred_in_path = "./experiments_eccv/" + args.exp_fdr + "_panoptic/"
+    pred_in_path = "./experiments_eccv/" + args.exp_fdr
     pred_out_path = pred_in_path + "/panoptic"
 
     gt_jsonfile = gt_out_path + "/cityscapes_panoptic_val_trainId.json"
