@@ -163,12 +163,14 @@ if __name__ == "__main__":
     unions = np.zeros((21))
 
     path = DATA_PATH
-    data_generator = data_loader.load_cityscapes(path, "arti_scribbles")
+    data_generator = data_loader.load_cityscapes(path, "scribbles")
     prob_path = PROB_PATH
 
     # create folder
-    if not os.path.isdir("./experiments_eccv/feat_prob_arti_4000/"):
-        os.mkdir("./experiments_eccv/feat_prob_arti_4000")
+    if not os.path.isdir("./experiments_eccv"):
+        os.mkdir("./experiments_eccv")
+    if not os.path.isdir("./experiments_eccv/prob_heur_4000/"):
+        os.mkdir("./experiments_eccv/prob_heur_4000")
 
     cnt = 0
     ssegs = []
@@ -177,6 +179,7 @@ if __name__ == "__main__":
     tick = time.time()
 
     algo_time = 0
+    number_nodes = 0
 
     # lambda is the growing parameter that acts finally as the regularization parameter beta, psi is  weights color, phi is weights on fea(prob.)
     # wi * wj * (psi * np.linalg.norm(Yi - Yj) ** 2 + phi * np.linalg.norm(Zi - Zj) ** 2)<= beta * cij * (wi + wj):
@@ -191,16 +194,19 @@ if __name__ == "__main__":
             cnt += 1
             height, width = image.shape[:2]
             if scribbles is not None:
-                print("{}: Generating ground truth approach for image {}...".format(cnt, filename))
-                scribbles = to_image.fill(scribbles)
-                scribbles = data_loader.scribble_convert(scribbles)
+                print("\n\n{}: ######### Generating ground truth approach for image {}...".format(cnt, filename))
+                # BGR to RGB
+                scribbles = cv2.cvtColor(scribbles, cv2.COLOR_BGR2RGB)
+                # skip ignore
+                scribbles[:,:,1] *= (scribbles[:,:,1] != 255)
             else:
                 # skip image which does not have annotation
                 print("{}: Skipping image {} because it does not have annotation...".format(cnt, filename))
+                cnt -= 1
                 continue
 
             # skip existed gt
-            if os.path.isfile("./experiments_eccv/feat_prob_arti_4000/" + filename + "_gtFine_instanceIds.png"):
+            if os.path.isfile("./experiments_eccv/prob_heur_4000/" + filename + "_gtFine_instanceIds.png"):
                 print("Annotation exists, skip {}".format(filename))
                 cnt -= 1
                 continue
@@ -222,19 +228,26 @@ if __name__ == "__main__":
             #show_feat(prob)
             graph.load_feat_map(prob, attr="prob")
 
+            # print # of nodes per graph
+            print("#### Number of nodes of this graph is: {}\n".format(graph.number_of_nodes()))
+            number_nodes += graph.number_of_nodes()
+
+
             tick1 = time.time()
             heuristic_graph = solver.heuristic.solve(graph.copy(), lambd, psi, phi, attr="prob")
             # convert into mask
             algo_time +=  time.time() - tick1
             #print("Average algo time: {}".format(time.time() - tick1))
             mask, pred = to_image.graph_to_image(heuristic_graph, height, width, scribbles)
+            # mask_show(image, mask, pred, name="heur")
+            # cv2.destroyAllWindows()
 
             # get formatted sseg and inst
             sseg_pred, inst_pred = to_image.format(pred)
             # save annotation
-            Image.fromarray(sseg_pred).save("./experiments_eccv/feat_prob_arti_4000/"  + filename + "_gtFine_labelIds.png")
-            Image.fromarray(inst_pred).save("./experiments_eccv/feat_prob_arti_4000/" + filename + "_gtFine_instanceIds.png")
-            cv2.imwrite("./experiments_eccv/feat_prob_arti_4000/" + filename + "_gtFine_color.png", mask)
+            Image.fromarray(sseg_pred).save("./experiments_eccv/prob_heur_4000/"  + filename + "_gtFine_labelIds.png")
+            Image.fromarray(inst_pred).save("./experiments_eccv/prob_heur_4000/" + filename + "_gtFine_instanceIds.png")
+            cv2.imwrite("./experiments_eccv/prob_heur_4000/" + filename + "_gtFine_color.png", mask)
 
             # store for score
             preds += list(pred%21)
@@ -245,7 +258,7 @@ if __name__ == "__main__":
             # cv2.destroyAllWindows()
 
             # terminate with iteration limit
-            #if cnt > 1:
+            #if cnt > 2:
             #    break
     except KeyboardInterrupt:
         pass
@@ -256,6 +269,7 @@ if __name__ == "__main__":
 
     print("Real used average time: {}".format((time.time() - tick) / cnt))
     print("Average algo time: {}".format(algo_time / cnt))
+    print("Average # of nodes per graph: {}".format(number_nodes / cnt))
 
     # calculate MIoU
     print("Score for origin scribbles:")
