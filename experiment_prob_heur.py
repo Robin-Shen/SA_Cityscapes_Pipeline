@@ -217,6 +217,7 @@ if __name__ == "__main__":
             # superpixels = superpixel.get(image)
             #print(path + "/graphs/" + filename)
             graph = nx.read_gpickle(path + "/graphs/" + filename + ".gpickle")
+            #print(path + "/graphs/" + filename + ".gpickle")
 
             superpixels = graph.get_superpixels_map()
             # split by annotation
