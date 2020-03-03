@@ -197,7 +197,8 @@ if __name__ == "__main__":
                 print("\n\n{}: ######### Generating ground truth approach for image {}...".format(cnt, filename))
                 # BGR to RGB
                 scribbles = cv2.cvtColor(scribbles, cv2.COLOR_BGR2RGB)
-                scribbles[:, :, 1] = np.where(scribbles[:, :, 1] == 255, 128, scribbles[:, :, 1])
+                # ignore region
+                scribbles[:,:,1] = np.where(scribbles[:,:,1]==255, 128, scribbles[:,:,1])
             else:
                 # skip image which does not have annotation
                 print("{}: Skipping image {} because it does not have annotation...".format(cnt, filename))

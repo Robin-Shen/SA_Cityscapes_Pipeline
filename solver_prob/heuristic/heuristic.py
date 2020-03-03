@@ -61,9 +61,6 @@ def solve(graph, lambd=0.03, psi=1, phi=0.02, stop=None, propagation=True, attr=
         if len(list(graph.neighbors(i))) == 1 and not graph.nodes[i]["label"]:
             j = list(graph.neighbors(i))[0]
             graph.contract(j, i)
-        # skip contracted node
-        if i not in graph.nodes:
-            continue
 
     if iter % 100 != 0:
         print("{} iterations: {} groups of pixels".format(iter+1, len(graph)))
