@@ -28,7 +28,7 @@ def graph_to_image(graph, height, width, scribbles):
             index = class_info[label].id + 21 * inst
         else:
             label_color = [0, 0, 0]
-            index = 0
+            index = 20
         # get pixels in current graph
         pixels = graph.nodes[group]["pixels"]
         # assign pixels with color
