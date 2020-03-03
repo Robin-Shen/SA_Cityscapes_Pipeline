@@ -166,8 +166,11 @@ if __name__ == "__main__":
     data_generator = data_loader.load_cityscapes(path, "arti_scribbles")
 
     # create folder
-    if not os.path.isdir("./feat_heur_arti/"):
-        os.mkdir("./feat_heur_arti")
+    # create folder
+    if not os.path.isdir("./experiments_eccv"):
+        os.mkdir("./experiments_eccv")
+    if not os.path.isdir("./experiments_eccv/feat_heur_arti/"):
+        os.mkdir("./experiments_eccv/feat_heur_arti")
 
     # load cnn model
     model = set_model("./models/checkpoints/deeplabv1_resnet101-coco.pth")
@@ -221,8 +224,8 @@ if __name__ == "__main__":
         # get formatted sseg and inst
         sseg_pred, inst_pred = to_image.format(pred)
         # save annotation
-        Image.fromarray(sseg_pred).save("./feat_heur_arti/"  + filename + "_gtFine_labelIds.png")
-        Image.fromarray(inst_pred).save("./feat_heur_arti/" + filename + "_gtFine_instanceIds.png")
+        Image.fromarray(sseg_pred).save("./experiments_eccv/feat_heur_arti/"  + filename + "_gtFine_labelIds.png")
+        Image.fromarray(inst_pred).save("./experiments_eccv/feat_heur_arti/" + filename + "_gtFine_instanceIds.png")
         cv2.imwrite("./feat_heur_arti/" + filename + "_gtFine_color.png", mask)
 
         # store for score

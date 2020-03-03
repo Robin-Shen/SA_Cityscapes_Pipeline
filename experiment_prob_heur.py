@@ -200,6 +200,7 @@ if __name__ == "__main__":
                 scribbles = cv2.cvtColor(scribbles, cv2.COLOR_BGR2RGB)
                 # skip ignore
                 scribbles[:,:,1] *= (scribbles[:,:,1] != 255)
+                scribbles[:,:,1] = np.where(scribbles[:,:,1]==255, 128, scribbles[:,:,1])
             else:
                 # skip image which does not have annotation
                 print("{}: Skipping image {} because it does not have annotation...".format(cnt, filename))

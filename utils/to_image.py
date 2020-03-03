@@ -42,10 +42,14 @@ def graph_to_image(graph, height, width, scribbles):
             annotated, trainid, inst = scribbles[y, x]
             # annotated
             if annotated:
-                label = label_map[trainid]
-                r, g, b = class_info[label].color
-                mask[y, x] = [b, g, r]
-                pred[y, x] = class_info[label].id + 21 * inst
+                if trainid == 128:
+                    mask[y, x] = [0, 0, 0]
+                    pred[y, x] = 20
+                else:
+                   label = label_map[trainid]
+                   r, g, b = class_info[label].color
+                   mask[y, x] = [b, g, r]
+                   pred[y, x] = class_info[label].id + 21 * inst
 
 
     return mask, pred
@@ -79,6 +83,9 @@ def format(pred):
             inst = inst + (pred % 21 == l.trainId) * (l.id * 1000 + pred // 21)
         else:
             inst = inst + (pred % 21 == l.trainId) * l.id
+
+    sseg[pred == 20] = 0
+    inst[pred == 20] = 0
 
     return sseg.astype(np.uint8), inst.astype(np.uint16)
 

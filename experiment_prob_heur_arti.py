@@ -167,8 +167,11 @@ if __name__ == "__main__":
     prob_path = PROB_PATH
 
     # create folder
-    if not os.path.isdir("./experiments_eccv/feat_prob_arti/"):
-        os.mkdir("./experiments_eccv/feat_prob_arti")
+    # create folder
+    if not os.path.isdir("./experiments_eccv"):
+        os.mkdir("./experiments_eccv")
+    if not os.path.isdir("./experiments_eccv/prob_heur_arti/"):
+        os.mkdir("./experiments_eccv/prob_heur_arti")
 
     cnt = 0
     ssegs = []
@@ -200,7 +203,7 @@ if __name__ == "__main__":
                 continue
 
             # skip existed gt
-            if os.path.isfile("./experiments_eccv/feat_prob_arti/" + filename + "_gtFine_instanceIds.png"):
+            if os.path.isfile("./experiments_eccv/prob_heur_arti/" + filename + "_gtFine_instanceIds.png"):
                 print("Annotation exists, skip {}".format(filename))
                 cnt -= 1
                 continue
@@ -232,9 +235,9 @@ if __name__ == "__main__":
             # get formatted sseg and inst
             sseg_pred, inst_pred = to_image.format(pred)
             # save annotation
-            Image.fromarray(sseg_pred).save("./experiments_eccv/feat_prob_arti/"  + filename + "_gtFine_labelIds.png")
-            Image.fromarray(inst_pred).save("./experiments_eccv/feat_prob_arti/" + filename + "_gtFine_instanceIds.png")
-            cv2.imwrite("./experiments_eccv/feat_prob_arti/" + filename + "_gtFine_color.png", mask)
+            Image.fromarray(sseg_pred).save("./experiments_eccv/prob_heur_arti/"  + filename + "_gtFine_labelIds.png")
+            Image.fromarray(inst_pred).save("./experiments_eccv/prob_heur_arti/" + filename + "_gtFine_instanceIds.png")
+            cv2.imwrite("./experiments_eccv/prob_heur_arti/" + filename + "_gtFine_color.png", mask)
 
             # store for score
             preds += list(pred%21)

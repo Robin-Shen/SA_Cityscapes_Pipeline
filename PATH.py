@@ -6,3 +6,6 @@ PROB_PATH = "/m/Camera_team/01_team_members/ruobing/drn_d_39_prob/"
 SCRI_PATH = "/m/Camera_team/01_team_members/ruobing/new_experiments_20190923/cityscapes"
 
 
+#DATA_PATH = "D:/Data/Cityscapes"
+#PROB_PATH = "D:/Data/Cityscapes/probs/"
+#SCRI_PATH = "D:/Data/Cityscapes"

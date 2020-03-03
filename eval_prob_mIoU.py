@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     path = DATA_PATH
     prob_path = PROB_PATH
-    data_generator = data_loader.load_cityscapes(path, "arti_scribbles")
+    data_generator = data_loader.load_cityscapes(path, "scribbles")
 
     cnt = 0
     ssegs = []

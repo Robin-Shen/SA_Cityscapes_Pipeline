@@ -4,3 +4,5 @@
 *.pth
 __pycache__
 .idea
+*.json
+*.ipynb

@@ -166,8 +166,10 @@ if __name__ == "__main__":
     data_generator = data_loader.load_cityscapes(path, "scribbles")
 
     # create folder
-    if not os.path.isdir("./feat_ilp/"):
-        os.mkdir("./feat_ilp")
+    if not os.path.isdir("./experiments_eccv"):
+        os.mkdir("./experiments_eccv")
+    if not os.path.isdir("./experiments_eccv/feat_ilp/"):
+        os.mkdir("./experiments_eccv/feat_ilp")
 
     # load cnn model
     model = set_model("./models/checkpoints/deeplabv1_resnet101-coco.pth")
@@ -185,13 +187,18 @@ if __name__ == "__main__":
         height, width = image.shape[:2]
         if scribbles is not None:
             print("{}: Generating ground truth approach for image {}...".format(cnt, filename))
+            # BGR to RGB
+            scribbles = cv2.cvtColor(scribbles, cv2.COLOR_BGR2RGB)
+            scribbles[:,:,1] = np.where(scribbles[:,:,1]==255, 128, scribbles[:,:,1])
+            # remove instance id
+            scribbles[:,:,2] = 0
         else:
             # skip image which does not have annotation
             print("{}: Skipping image {} because it does not have annotation...".format(cnt, filename))
             continue
 
         # skip existed gt
-        if os.path.isfile("./feat_ilp/" + filename + "_gtFine_instanceIds.png"):
+        if os.path.isfile("./experiments_eccv/feat_ilp/" + filename + "_gtFine_instanceIds.png"):
             print("Annotation exists, skip {}".format(filename))
             continue
 
@@ -209,15 +216,23 @@ if __name__ == "__main__":
         feat_map = get_map(image, feature_out)
         graph.load_feat_map(feat_map)
 
-        lambd=0.1
-        psi=0.0
-        phi=0.001
-        heuristic_graph = solver.heuristic.solve(graph.copy(), lambd, psi, phi, attr="feat")
+        # lambd=0.1
+        # psi=0.0
+        # phi=0.001
+        # heuristic_graph = solver.heuristic.solve(graph.copy(), lambd, psi, phi, attr="feat")
         # convert into mask
-        mask, pred = to_image.graph_to_image(heuristic_graph, height, width, scribbles)
+        # mask, pred = to_image.graph_to_image(heuristic_graph, height, width, scribbles)
         # show the mask
         # mask_show(image, mask, pred, name="heur")
         # cv2.destroyAllWindows()
+
+        # load heuristic result directly
+        pred_id = np.array(Image.open("./experiments_eccv/feat_heur/" + filename + "_gtFine_labelIds.png"))
+        pred = np.zeros_like(pred_id, dtype=np.int8)
+        for trainid in np.unique(pred_id):
+            id = data.id2train[trainid]
+            pred += id * (pred_id == trainid)
+
 
         ilp_graph = graph.copy()
         # drop instance id
@@ -247,9 +262,9 @@ if __name__ == "__main__":
         # get formatted sseg and inst
         sseg_pred, inst_pred = to_image.format(pred)
         # save annotation
-        Image.fromarray(sseg_pred).save("./feat_ilp/"  + filename + "_gtFine_labelIds.png")
-        Image.fromarray(inst_pred).save("./feat_ilp/" + filename + "_gtFine_instanceIds.png")
-        cv2.imwrite("./feat_ilp/" + filename + "_gtFine_color.png", mask)
+        Image.fromarray(sseg_pred).save("./experiments_eccv/feat_ilp/"  + filename + "_gtFine_labelIds.png")
+        # Image.fromarray(inst_pred).save("./experiments_eccv/feat_ilp/" + filename + "_gtFine_instanceIds.png")
+        cv2.imwrite("./experiments_eccv/feat_ilp/" + filename + "_gtFine_color.png", mask)
 
         # store for score
         preds += list(pred%21)
@@ -264,7 +279,7 @@ if __name__ == "__main__":
              break
 
     # show paramters
-    print(lambd, psi, phi)
+    # print(lambd, psi, phi)
 
     print("Average time: {}".format((time.time() - tick) / cnt))
 
