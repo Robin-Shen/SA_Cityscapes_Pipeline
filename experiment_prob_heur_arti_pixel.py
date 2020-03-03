@@ -166,8 +166,10 @@ if __name__ == "__main__":
     data_generator = data_loader.load_cityscapes(path, "arti_scribbles")
 
     # create folder
-    if not os.path.isdir("./feat_prob_arti_pixel/"):
-        os.mkdir("./feat_prob_arti_pixel")
+    if not os.path.isdir("./experiments_eccv"):
+        os.mkdir("./experiments_eccv")
+    if not os.path.isdir("./experiments_eccv/feat_prob_arti_pixel/"):
+        os.mkdir("./experiments_eccv/feat_prob_arti_pixel")
 
     cnt = 0
     ssegs = []
@@ -193,7 +195,11 @@ if __name__ == "__main__":
             continue
 
         # build graph
-        graph = to_graph.to_pixel_graph(image, scribbles)
+        superpixels = np.zeros((height, width), dtype=int)
+        for y in range(height):
+            for x in range(width):
+                superpixels[y, x] = x + y * width
+        graph = to_graph.to_superpixel_graph(image, scribbles, superpixels)
 
         # get prob map
         prob = np.load(PROB_PATH + "/" + filename + "_leftImg8bit.npy")[0].astype("float")

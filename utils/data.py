@@ -121,3 +121,8 @@ label_map = {}
 for l in class_info:
     id = class_info[l].id
     label_map[id] = l
+
+ignoreId = []
+for l in labels:
+    if l.trainId == 255:
+        ignoreId.append(l.id)

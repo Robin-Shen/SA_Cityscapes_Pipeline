@@ -183,12 +183,14 @@ if __name__ == "__main__":
     tick = time.time()
 
     for filename, image, sseg, inst, scribbles in data_generator:
+
         cnt += 1
         height, width = image.shape[:2]
         if scribbles is not None:
             print("{}: Generating ground truth approach for image {}...".format(cnt, filename))
             # BGR to RGB
             scribbles = cv2.cvtColor(scribbles, cv2.COLOR_BGR2RGB)
+            scribbles[:,:,1] = np.where(scribbles[:,:,1]==255, 128, scribbles[:,:,1])
         else:
             # skip image which does not have annotation
             print("{}: Skipping image {} because it does not have annotation...".format(cnt, filename))
@@ -232,8 +234,8 @@ if __name__ == "__main__":
         ssegs += list(sseg)
 
         # visualize
-        # mask_show(image, mask, inst_pred, name="image")
-        # cv2.destroyAllWindows()
+        mask_show(image, mask, inst_pred, name="image")
+        cv2.destroyAllWindows()
 
         # terminate with iteration limit
         if cnt > 1:

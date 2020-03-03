@@ -54,7 +54,9 @@ def gt_covert(gt):
     gt = np.array(gt)
     new_gt = np.zeros_like(gt)
     for label in labels:
-        if label.id != -1:
+        if label.id != 0 and label.trainId == 255:
+            new_gt = new_gt + (gt == label.id) * 128
+        elif label.id != -1:
             new_gt = new_gt + (gt == label.id) * label.trainId
         else:
             new_gt = new_gt + (gt == label.id) * 255
