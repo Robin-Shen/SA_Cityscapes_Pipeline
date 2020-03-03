@@ -254,7 +254,9 @@ if __name__ == "__main__":
         ilp.parameters.timelimit.set(timelimit)
         # solve
         ilp.solve()
-        mask, pred = to_image.ilp_to_image(ilp_graph, ilp, height, width, scribbles)
+        if ilp.solution.get_status() == 107:
+            mask, pred = to_image.ilp_to_image(ilp_graph, ilp, height, width, scribbles)
+            cv2.imwrite("./experiments_eccv/feat_ilp/" + filename + "_gtFine_color.png", mask)
         # show the mask
         # mask_show(image, mask, pred, name="ilp")
         # cv2.destroyAllWindows()
@@ -264,7 +266,6 @@ if __name__ == "__main__":
         # save annotation
         Image.fromarray(sseg_pred).save("./experiments_eccv/feat_ilp/"  + filename + "_gtFine_labelIds.png")
         # Image.fromarray(inst_pred).save("./experiments_eccv/feat_ilp/" + filename + "_gtFine_instanceIds.png")
-        cv2.imwrite("./experiments_eccv/feat_ilp/" + filename + "_gtFine_color.png", mask)
 
         # store for score
         preds += list(pred%21)
