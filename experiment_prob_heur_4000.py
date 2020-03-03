@@ -167,18 +167,10 @@ if __name__ == "__main__":
     prob_path = PROB_PATH
 
     # create folder
-<<<<<<< HEAD:experiment_prob_heur_4000.py
     if not os.path.isdir("./experiments_eccv"):
         os.mkdir("./experiments_eccv")
     if not os.path.isdir("./experiments_eccv/prob_heur_4000/"):
         os.mkdir("./experiments_eccv/prob_heur_4000")
-=======
-    # create folder
-    if not os.path.isdir("./experiments_eccv"):
-        os.mkdir("./experiments_eccv")
-    if not os.path.isdir("./experiments_eccv/prob_heur_arti_4000/"):
-        os.mkdir("./experiments_eccv/prob_heur_arti_4000")
->>>>>>> 91fc83636b4d756ae0c11a778d3791d6f14ce3a3:experiment_prob_heur_arti_4000.py
 
     cnt = 0
     ssegs = []
