@@ -241,7 +241,6 @@ if __name__ == "__main__":
             id = data.id2train[trainid]
             pred += id * (pred_id == trainid)
 
-
         ilp_graph = graph.copy()
         # drop instance id
         for i in ilp_graph.nodes:
@@ -253,7 +252,7 @@ if __name__ == "__main__":
         # merge nodes with same label
         ilp_graph.add_pseudo_edge()
         # get superpixels map
-        superpixels = ilp_graph.get_superpixels_map()
+        superpixels = ilp_graph.get_superpixels_map() * (pred != 255)
         # integer linear programming
         ilp = solver.ilp.build_model(ilp_graph, args.param)
         solver.ilp.warm_start(ilp, pred%21, superpixels)
