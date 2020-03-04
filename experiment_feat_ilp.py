@@ -254,6 +254,7 @@ if __name__ == "__main__":
         ilp.parameters.timelimit.set(timelimit)
         # solve
         ilp.solve()
+        print(ilp.solution.get_status())
         if ilp.solution.get_status() == 107:
             mask, pred = to_image.ilp_to_image(ilp_graph, ilp, height, width, scribbles)
             cv2.imwrite("./experiments_eccv/feat_ilp/" + filename + "_gtFine_color.png", mask)
