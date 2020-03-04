@@ -210,7 +210,6 @@ if __name__ == "__main__":
                 continue
 
             # generate superpixels
-            # superpixels = superpixel.get(image)
             graph = nx.read_gpickle(path + "/graphs/" + filename + ".gpickle")
 
             superpixels = graph.get_superpixels_map()

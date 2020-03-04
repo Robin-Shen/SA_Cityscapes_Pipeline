@@ -34,8 +34,8 @@ def split(superpixels, annotation):
     """
     superpixels = sg.join_segmentations(superpixels, annotation[:,:,0] // 255 * annotation[:,:,1])
     superpixels = sg.join_segmentations(superpixels, annotation[:,:,0] // 255 * annotation[:,:,2])
-    #superpixels = enforce_connectivity(superpixels)
-    #superpixels, _, _ = sg.relabel_sequential(superpixels)
+    superpixels = enforce_connectivity(superpixels)
+    superpixels, _, _ = sg.relabel_sequential(superpixels)
     return superpixels + 1
 
 def enforce_connectivity(segments):
