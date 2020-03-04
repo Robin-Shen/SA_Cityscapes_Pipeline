@@ -246,7 +246,7 @@ if __name__ == "__main__":
         # mark ignore
         ignore = (pred_id == 0)
         scribbles[:,:,0] = scribbles[:,:,0] * (1 - ignore) + 255 * ignore
-        scribbles[:,:,1] = scribbles[:,:,1] * (1 - ignore) + 20 * ignore
+        scribbles[:,:,1] = scribbles[:,:,1] * (1 - ignore) + 128 * ignore
 
         ilp_graph = graph.copy()
         # drop instance id
