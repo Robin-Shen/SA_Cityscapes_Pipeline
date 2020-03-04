@@ -40,14 +40,14 @@ def build_model(graph, lambd):
     ilp.parameters.threads.set(32)
 
     # register callback
-    ilp.register_callback(connectivityCallback)
+    #ilp.register_callback(connectivityCallback)
 
     # associate additional data
-    connectivityCallback._graph = graph.copy()
-    connectivityCallback._names = ilp.variables.get_names()[:len(graph)*len(label_map)]
-    connectivityCallback._label_map = label_map
+    #connectivityCallback._graph = graph.copy()
+    #connectivityCallback._names = ilp.variables.get_names()[:len(graph)*len(label_map)]
+    #connectivityCallback._label_map = label_map
 
-    print("Original MIP has {} rows and {} columns.".format(len(rows), len(colnames)))
+    print("No connectivity now !!!!!!!!!!!!!!!!!! Original MIP has {} rows and {} columns.".format(len(rows), len(colnames)))
 
     return ilp
 

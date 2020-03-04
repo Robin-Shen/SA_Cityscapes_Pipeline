@@ -179,7 +179,7 @@ if __name__ == "__main__":
     if not os.path.isdir("./experiments_eccv"):
         os.mkdir("./experiments_eccv")
 
-    # experiment folder for ilp, + "_mipemphasis = feasibility"
+    # experiment folder for ilp,  + "_mipemphasis = hiddenfeas" + "_modi/"
     saved_folder = "./experiments_eccv/prob_ilp_param=" + str(args.param) + "_t=" + str(args.timelimit) + "/"
     print(saved_folder)
 
@@ -189,6 +189,11 @@ if __name__ == "__main__":
     cnt = 0
     ssegs = []
     preds = []
+
+    no_solution_list = []
+    opt_list = []
+
+    solution_cnt = 0
 
     algo_time = 0
     number_nodes = 0
@@ -277,14 +282,31 @@ if __name__ == "__main__":
         ilp.parameters.timelimit.set(timelimit)
 
         # change mip emphasis ---- not done
-        ilp.parameters.emphasis.mip.set(1)
+        #ilp.parameters.emphasis.mip.set(4)
 
         tick1 = time.time()
+
+
         # solve
         ilp.solve()
-        algo_time += time.time() - tick1
 
-        mask, pred = to_image.ilp_to_image(ilp_graph, ilp, height, width, scribbles)
+        algo_time += time.time() - tick1
+        #print("###Status of ilp = {} ###".format(ilp.solution.get_status()))
+        #print("###Status of ilp = {} ###".format(ilp.solution.get_status()))
+        #if ilp.solution.get_status() == 101 or 107 or 109 or 127 or 105 or 111 or 113:
+        if ilp.solution.get_status() != 103 and ilp.solution.get_status() != 108:
+            print("##Status of ilp = {} ##".format(ilp.solution.get_status()))
+            mask, pred = to_image.ilp_to_image(ilp_graph, ilp, height, width, scribbles)
+            cv2.imwrite(saved_folder + filename + "_gtFine_color.png", mask)
+            solution_cnt += 1
+            if ilp.solution.get_status() == 101:
+                opt_list.append(filename)
+        else:
+            print("###############Status of ilp = {} ###############".format(ilp.solution.get_status()))
+            no_solution_list.append(filename)
+            #mask, pred = to_image.ilp_to_image(ilp_graph, ilp, height, width, scribbles)
+
+
 
         # show the mask
         # mask_show(image, mask, pred, name="ilp")
@@ -295,12 +317,16 @@ if __name__ == "__main__":
         # save annotation
         Image.fromarray(sseg_pred).save(saved_folder  + filename + "_gtFine_labelIds.png")
         # Image.fromarray(inst_pred).save("./experiments_eccv/prob_ilp_arti/" + filename + "_gtFine_instanceIds.png")
-        cv2.imwrite(saved_folder + filename + "_gtFine_color.png", mask)
+        #cv2.imwrite(saved_folder + filename + "_gtFine_color.png", mask)
+
+        #Image.fromarray(sseg_pred).save("./experiments_eccv/prob_ilp/"  + filename + "_gtFine_labelIds.png")
+        # Image.fromarray(inst_pred).save("./experiments_eccv/prob_ilp/" + filename + "_gtFine_instanceIds.png")
 
         # store for score
         preds += list(pred%21)
         ssegs += list(sseg)
-
+        #print("ILPs that have no solution: {}".format(no_solution_list))
+        #print(no_solution_list)
         # visualize
         #mask_show(image, mask, inst_pred, name="image")
         #cv2.destroyAllWindows()
@@ -315,9 +341,13 @@ if __name__ == "__main__":
     print("Real used average time: {}".format((time.time() - tick) / cnt))
     print("Average algo time: {}".format(algo_time / cnt))
     print("Average number of nodes of ILP: {} \n".format(number_nodes / cnt))
+    print("Number of feasible ILPs: {} \n".format(solution_cnt))
 
     print(saved_folder)
 
     # calculate MIoU
     print("Score for {} scribbles:".format(cnt)) 
     print(metrics.scores(ssegs, preds, 19))
+
+    print("ILPs that have no solution: {}".format(no_solution_list))
+    print("ILPs that are optimal: {}".format(opt_list))

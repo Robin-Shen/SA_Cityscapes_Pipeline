@@ -162,8 +162,8 @@ if __name__ == "__main__":
 
     # set parser
     parser = argparse.ArgumentParser()
-    parser.add_argument('--param', type=int, default=1)
-    parser.add_argument('--timelimit', type=int, default=5)
+    parser.add_argument('--param', type=float, default=3)
+    parser.add_argument('--timelimit', type=int, default=20)
     args = parser.parse_args()
 
 
@@ -175,23 +175,42 @@ if __name__ == "__main__":
     data_generator = data_loader.load_cityscapes(path, "arti_scribbles")
     prob_path = PROB_PATH
 
+    # experiment folder for ilp,  + "_mipemphasis = hiddenfeas" + "_modi/"
+    saved_folder = "./experiments_eccv/prob_ilp_arti_param=" + str(args.param) + "_t=" + str(args.timelimit) + "/"
+    print(saved_folder)
+
     # create folder
     if not os.path.isdir("./experiments_eccv"):
         os.mkdir("./experiments_eccv")
-    if not os.path.isdir("./experiments_eccv/prob_ilp_arti/"):
-        os.mkdir("./experiments_eccv/prob_ilp_arti")
+    if not os.path.isdir(saved_folder):
+        os.mkdir(saved_folder)
 
     cnt = 0
     ssegs = []
     preds = []
+
+    no_solution_list = []
+    opt_list = []
+
+    solution_cnt = 0
+
+    algo_time = 0
+    number_nodes = 0
 
     tick = time.time()
 
     for filename, image, sseg, inst, scribbles in data_generator:
         cnt += 1
         height, width = image.shape[:2]
+
+        # skip existed gt
+        if os.path.isfile(saved_folder + filename + "_gtFine_labelIds.png"):
+            print("Annotation exists, skip {}".format(filename))
+            cnt -= 1
+            continue
+
         if scribbles is not None:
-            print("{}: Generating ground truth approach for image {}...".format(cnt, filename))
+            print("\n##########{}: Generating ground truth approach for image {}...".format(cnt, filename))
             scribbles = to_image.fill(scribbles)
             scribbles = data_loader.scribble_convert(scribbles)
             # remove instance id
@@ -204,11 +223,7 @@ if __name__ == "__main__":
             cnt -= 1
             continue
 
-        # skip existed gt
-        if os.path.isfile("./experiments_eccv/prob_ilp_arti/" + filename + "_gtFine_labelIds.png"):
-            print("Annotation exists, skip {}".format(filename))
-            cnt -= 1
-            continue
+
 
         # generate superpixels
         # superpixels = superpixel.get(image)
@@ -236,7 +251,7 @@ if __name__ == "__main__":
         # cv2.destroyAllWindows()
 
         # load heuristic result directly
-        pred_id = np.array(Image.open("./experiments_eccv/prob_heur_arti/" + filename + "_gtFine_labelIds.png"))
+        pred_id = np.array(Image.open("/m/Camera_team/01_team_members/ruobing/experiments_eccv/prob_heur_arti/" + filename + "_gtFine_labelIds.png"))
         pred = np.zeros_like(pred_id, dtype=np.int8)
         for trainid in np.unique(pred_id):
             id = data.id2train[trainid]
@@ -261,19 +276,41 @@ if __name__ == "__main__":
         # set time limit
         timelimit = args.timelimit
         ilp.parameters.timelimit.set(timelimit)
+
+        # print # of nodes per image and accumulate them for computing the average
+        print("#### Number of nodes of ILP: {} \n".format(ilp_graph.number_of_nodes()))
+        number_nodes += ilp_graph.number_of_nodes()
+
+        tick1 = time.time()
+
         # solve
         ilp.solve()
-        mask, pred = to_image.ilp_to_image(ilp_graph, ilp, height, width, scribbles)
+
+        algo_time += time.time() - tick1
+
+        if ilp.solution.get_status() != 103 and ilp.solution.get_status() != 108:
+            print("##Status of ilp = {} ##".format(ilp.solution.get_status()))
+            mask, pred = to_image.ilp_to_image(ilp_graph, ilp, height, width, scribbles)
+            cv2.imwrite(saved_folder + filename + "_gtFine_color.png", mask)
+            solution_cnt += 1
+            if ilp.solution.get_status() == 101:
+                opt_list.append(filename)
+        else:
+            print("###############Status of ilp = {} ###############".format(ilp.solution.get_status()))
+            no_solution_list.append(filename)
         # show the mask
         # mask_show(image, mask, pred, name="ilp")
         # cv2.destroyAllWindows()
 
+        print("ILPs that have no solution: {}".format(no_solution_list))
+        print("ILPs that are optimal: {}".format(opt_list))
+
         # get formatted sseg and inst
         sseg_pred, inst_pred = to_image.format(pred)
         # save annotation
-        Image.fromarray(sseg_pred).save("./experiments_eccv/prob_ilp_arti/"  + filename + "_gtFine_labelIds.png")
+        Image.fromarray(sseg_pred).save(saved_folder  + filename + "_gtFine_labelIds.png")
         # Image.fromarray(inst_pred).save("./experiments_eccv/prob_ilp_arti/" + filename + "_gtFine_instanceIds.png")
-        cv2.imwrite("./experiments_eccv/prob_ilp_arti/" + filename + "_gtFine_color.png", mask)
+
 
         # store for score
         preds += list(pred%21)
@@ -284,14 +321,22 @@ if __name__ == "__main__":
         # cv2.destroyAllWindows()
 
         # terminate with iteration limit
-        if cnt > 1:
-             break
+        #if cnt > 1:
+        #     break
 
     # show paramters
     #print(lambd, psi, phi)
 
-    print("Average time: {}".format((time.time() - tick) / cnt))
+    print("Real used average time: {}".format((time.time() - tick) / cnt))
+    print("Average algo time: {}".format(algo_time / cnt))
+    print("Average number of nodes of ILP: {} \n".format(number_nodes / cnt))
+    print("Number of feasible ILPs: {} \n".format(solution_cnt))
+
+    print(saved_folder)
 
     # calculate MIoU
-    print("Score for origin scribbles:")
+    print("Score for {} scribbles:".format(cnt))
     print(metrics.scores(ssegs, preds, 19))
+
+    print("ILPs that have no solution: {}".format(no_solution_list))
+    print("ILPs that are optimal: {}".format(opt_list))

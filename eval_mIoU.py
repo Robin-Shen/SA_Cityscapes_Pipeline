@@ -38,7 +38,7 @@ if __name__ == "__main__":
         # get annotation
         anno_path =  "./experiments_eccv/" + args.exp_fdr +  "/" + filename + "_gtFine_labelIds.png"
         if not os.path.isfile(anno_path):
-            print("Annotation does not exists, skip {}".format(filename))
+            #print("Annotation does not exists, skip {}".format(filename))
             cnt -= 1
             continue
 
