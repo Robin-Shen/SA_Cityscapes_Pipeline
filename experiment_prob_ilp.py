@@ -199,7 +199,8 @@ if __name__ == "__main__":
     number_nodes = 0
 
     tick = time.time()
-
+    opt_cnt = 0
+    number_opt_nodes = 0
     infea = []
 
     for filename, image, sseg, inst, scribbles in data_generator:
@@ -307,7 +308,9 @@ if __name__ == "__main__":
             cv2.imwrite(saved_folder + filename + "_gtFine_color.png", mask)
             solution_cnt += 1
             if ilp.solution.get_status() == 101:
+                opt_cnt += 1
                 opt_list.append(filename)
+                number_opt_nodes += ilp_graph.number_of_nodes()
         else:
             print("###############Status of ilp = {} ###############".format(ilp.solution.get_status()))
             no_solution_list.append(filename)
@@ -348,7 +351,9 @@ if __name__ == "__main__":
     print("Real used average time: {}".format((time.time() - tick) / cnt))
     print("Average algo time: {}".format(algo_time / cnt))
     print("Average number of nodes of ILP: {} \n".format(number_nodes / cnt))
+    print("Average number of optimal ILP nodes: {} \n".format(number_opt_nodesnodes / opt_cnt))
     print("Number of feasible ILPs: {} \n".format(solution_cnt))
+    print("Number of optimal ILPs: {} \n".format(opt_cnt))
 
     print(saved_folder)
 
