@@ -283,7 +283,7 @@ class Graph(nx.Graph):
             for comp in nx.connected_components(sub_graph):
                 if root not in comp:
                     seg = list(comp)[0]
-                    print("add shortcut for {}".format(label))
+                    #print("add shortcut for {}".format(label))
                     self.add_edge(root, seg, connections=0)
 
     def get_superpixels_map(self):

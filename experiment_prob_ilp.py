@@ -162,7 +162,7 @@ if __name__ == "__main__":
 
     # set parser
     parser = argparse.ArgumentParser()
-    parser.add_argument('--param', type=float, default=1)
+    parser.add_argument('--param', type=float, default=3)
     parser.add_argument('--timelimit', type=int, default=20)
     args = parser.parse_args()
 
@@ -246,7 +246,7 @@ if __name__ == "__main__":
         # cv2.destroyAllWindows()
 
         # load heuristic result directly
-        pred_id = np.array(Image.open(saved_folder + filename + "_gtFine_labelIds.png"))
+        pred_id = np.array(Image.open("/m/Camera_team/01_team_members/ruobing/experiments_eccv/prob_heur/" + filename + "_gtFine_labelIds.png"))
         pred = np.zeros_like(pred_id, dtype=np.int8)
         for trainid in np.unique(pred_id):
             id = data.id2train[trainid]
@@ -277,6 +277,9 @@ if __name__ == "__main__":
         timelimit = args.timelimit
         ilp.parameters.timelimit.set(timelimit)
 
+        # change mip emphasis ---- not done
+        ilp.parameters.emphasis.mip.set(1)
+
         tick1 = time.time()
         # solve
         ilp.solve()
@@ -300,8 +303,8 @@ if __name__ == "__main__":
         ssegs += list(sseg)
 
         # visualize
-        mask_show(image, mask, inst_pred, name="image")
-        cv2.destroyAllWindows()
+        #mask_show(image, mask, inst_pred, name="image")
+        #cv2.destroyAllWindows()
 
         # terminate with iteration limit
         #if cnt > 1:
@@ -313,6 +316,8 @@ if __name__ == "__main__":
     print("Real used average time: {}".format((time.time() - tick) / cnt))
     print("Average algo time: {}".format(algo_time / cnt))
     print("Average number of nodes of ILP: {} \n".format(number_nodes / cnt))
+
+    print(saved_folder)
 
     # calculate MIoU
     print("Score for {} scribbles:".format(cnt)) 
