@@ -136,3 +136,32 @@ def fill(scribbles):
             filling = np.logical_or(filling, cv2.drawContours(binary, [ctr], -1, 1, thickness=-1))
         annotation += filling * l
     return annotation
+
+def get_mask(annotations, erode=False):
+    """
+    visualize annotation
+    """
+    height, width, _ = annotations.shape
+
+    # init
+    annos = np.zeros((height, width), dtype=np.uint8)
+    mask = np.zeros((height, width, 3), dtype=np.uint8)
+
+    # orignal part
+    for y in range(height):
+        for x in range(width):
+            annotated, trainid, inst = annotations[y, x]
+            # annotated
+            if annotated:
+                annos[y, x] = 255
+                if trainid == 128:
+                    mask[y, x] = [0, 0, 0]
+                else:
+                   label = label_map[trainid]
+                   r, g, b = class_info[label].color
+                   mask[y, x] = [b, g, r]
+
+    if erode:
+        annos = annos - cv2.erode(annos, None, iterations=2)
+
+    return mask.astype(np.uint8), annos.astype(np.uint8)
