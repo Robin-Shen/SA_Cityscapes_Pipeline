@@ -36,17 +36,18 @@ def vis_scribbles(image, mask, annotated):
 
 if __name__ == "__main__":
 
+    path = DATA_PATH
+
     # set parser
     parser = argparse.ArgumentParser()
     parser.add_argument('--type', type=str, default="scribbles")
-    parser.add_argument('--graph_dir', type=str, default="D/Data/Cityscapes/graph")
+    parser.add_argument('--graph_dir', type=str, default=path+"/graphs/")
     args = parser.parse_args()
 
     # guarantee valid args
     assert args.type in ["scribbles", "arti_scribbles", "superpixels"], "Type should be scribbles arti_scribbles or superpixels"
 
     # output folder
-    path = DATA_PATH
     output = "./experiments_eccv/vis/" + args.type
 
     # create folder
@@ -65,7 +66,7 @@ if __name__ == "__main__":
         if args.type == "superpixels":
             print("{}: Visualizing superpixels for image {}...".format(cnt, filename))
             # get superpixels
-            graph = nx.read_gpickle(path + "/graphs/" + filename + ".gpickle")
+            graph = nx.read_gpickle(args.graph_dir + "/" + filename + ".gpickle")
             superpixels = graph.get_superpixels_map()
             # visualize
             img = vis_superpixels(image, superpixels)
