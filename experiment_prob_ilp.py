@@ -200,6 +200,8 @@ if __name__ == "__main__":
 
     tick = time.time()
 
+    infea = []
+
     for filename, image, sseg, inst, scribbles in data_generator:
         cnt += 1
         height, width = image.shape[:2]
@@ -219,7 +221,7 @@ if __name__ == "__main__":
             scribbles[:,:,2] = 0
         else:
             # skip image which does not have annotation
-            print("{}: Skipping image {} because it does not have annotation...".format(cnt, filename))
+            print("Skipping image {} because it does not have annotation...".format(filename))
             cnt -= 1
             continue
 
@@ -256,6 +258,11 @@ if __name__ == "__main__":
         for trainid in np.unique(pred_id):
             id = data.id2train[trainid]
             pred += id * (pred_id == trainid)
+
+        # mark ignore
+        ignore = (pred_id == 0)
+        scribbles[:,:,0] = scribbles[:,:,0] * (1 - ignore) + 255 * ignore
+        scribbles[:,:,1] = scribbles[:,:,1] * (1 - ignore) + 20 * ignore
 
         ilp_graph = graph.copy()
         # drop instance id
