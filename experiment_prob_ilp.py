@@ -230,6 +230,10 @@ if __name__ == "__main__":
 
         # generate superpixels
         # superpixels = superpixel.get(image)
+        if not os.path.isfile(path + "/graphs/" + filename + ".gpickle"):
+            print("Skipping image {} because it does not have graph...".format(filename))
+            cnt -= 1
+            continue
         graph = nx.read_gpickle(path + "/graphs/" + filename + ".gpickle")
         superpixels = graph.get_superpixels_map()
         # split by annotation

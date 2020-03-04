@@ -241,6 +241,6 @@ def warm_start(ilp, pred, superpixels):
                     vars.append(1)
                 else:
                     vars.append(0)
-
+                    
     assert len(names) == len(vars)
     ilp.MIP_starts.add(cplex.SparsePair(ind=names, val=vars), ilp.MIP_starts.effort_level.repair, "heuristic")
