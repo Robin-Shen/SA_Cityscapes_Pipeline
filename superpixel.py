@@ -22,10 +22,10 @@ def get(image):
     # get superpixel labels
     # superpixels = sg.slic(image, compactness=4, n_segments=h*w//25, sigma=0.5, enforce_connectivity=True)
     # superpixels = sg.quickshift(image, ratio=0.5)
-    # superpixels = sg.felzenszwalb(image, scale=0.01)
-    retval= cv2.ximgproc.createSuperpixelSEEDS(w, h, 3, w*h//10, num_levels=20, prior=2, histogram_bins=10)
-    retval.iterate(image, 50)
-    superpixels = retval.getLabels()
+    superpixels = sg.felzenszwalb(image, scale=0.01)
+    # retval= cv2.ximgproc.createSuperpixelSEEDS(w, h, 3, w*h//10, num_levels=20, prior=2, histogram_bins=10)
+    # retval.iterate(image.astype(np.uint8), 50)
+    # superpixels = retval.getLabels()
     return superpixels.astype(int)
 
 def split(superpixels, annotation):
@@ -33,6 +33,7 @@ def split(superpixels, annotation):
     split superpixels with different label
     """
     superpixels = sg.join_segmentations(superpixels, annotation[:,:,0] // 255 * annotation[:,:,1])
+    superpixels = sg.join_segmentations(superpixels, annotation[:,:,0] // 255 * annotation[:,:,2])
     superpixels = enforce_connectivity(superpixels)
     superpixels, _, _ = sg.relabel_sequential(superpixels)
     return superpixels + 1
